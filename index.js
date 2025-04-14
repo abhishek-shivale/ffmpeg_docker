@@ -5,17 +5,14 @@ const { S3 } = require("@aws-sdk/client-s3");
 const { config } = require("dotenv")
 config()
 
-// Configuration
 const inputPath = path.join(__dirname, "./input/input.mp4");
 const outputDir = path.join(__dirname, "./output");
 const masterPlaylist = path.join(outputDir, "master.m3u8");
 
-// Validate input file
 if (!fs.existsSync(inputPath)) {
   throw new Error(`Input file not found: ${inputPath}`);
 }
 
-// Create output directory if it doesn't exist
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
@@ -83,11 +80,9 @@ const renditions = [
   },
 ];
 
-// Process each rendition
 async function processRenditions() {
-  let masterContent = "#EXTM3U\n#EXT-X-VERSION:3\n";
+    let masterContent = "#EXTM3U\n#EXT-X-VERSION:3\n";
 
-  // Create directories first
   for (const rendition of renditions) {
     const renditionDir = path.join(outputDir, rendition.name);
     if (!fs.existsSync(renditionDir)) {
@@ -95,14 +90,12 @@ async function processRenditions() {
     }
   }
 
-  // Process each rendition sequentially
   for (const rendition of renditions) {
     await new Promise((resolve, reject) => {
       const renditionDir = path.join(outputDir, rendition.name);
       const outputPath = path.join(renditionDir, "playlist.m3u8");
       const segmentPattern = path.join(renditionDir, `${rendition.name}_segment%03d.ts`);
 
-      // Add to master playlist
       masterContent += `#EXT-X-STREAM-INF:BANDWIDTH=${
         parseInt(rendition.videoBitrate) * 1000
       },RESOLUTION=${rendition.resolution}\n${rendition.name}/playlist.m3u8\n`;
@@ -146,13 +139,11 @@ async function processRenditions() {
     });
   }
 
-  // Write master playlist
   fs.writeFileSync(masterPlaylist, masterContent);
   console.log("✅ Master playlist created");
   return { outputDir, masterPlaylist };
 }
 
-// Upload to S3 with retry logic
 async function uploadFolder(localFolderPath, s3Prefix, maxRetries = 3) {
   if (!process.env.AWS_BUCKET_NAME) {
     throw new Error("AWS_BUCKET_NAME environment variable is required");
